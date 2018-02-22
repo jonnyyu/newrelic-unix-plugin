@@ -21,17 +21,17 @@ import com.newrelic.metrics.publish.util.Logger;
 public class CommandMetricUtils {
 
 	public static final String kPluginJarName = "newrelic_unix_plugin";
-	
+
 	private static Pattern dashesPattern = Pattern.compile("\\s*[\\w-]+(\\s+[-]+)+(\\s[\\w-]*)*");
 	private static Pattern singleMetricLinePattern = Pattern.compile("\\S*(\\d+)\\s+([\\w-%\\(\\)])(\\s{0,1}[\\w-%\\(\\)])*");
 	private static final Logger logger = Logger.getLogger(UnixAgent.class);
-	
+
 	public static void addSummaryMetrics(HashMap<String, MetricOutput> currentMetrics) throws Exception {
 		String metricName = null, metricUnits = null, metricPrefix = "Summary";
 		double metricValue = 0.0, memFree = 0.0, memUsed = 0.0, memTotal = 0.0;
 		boolean memFreeSet = false, memUsedSet = false, memTotalSet = false;
 		HashMap<String, MetricOutput> newMetrics = new HashMap<String, MetricOutput>();
-		
+
 		for (MetricOutput thisMetric : currentMetrics.values()) {
 			String thisMetricName = thisMetric.getMetricDetail().getName();
 			String thisMetricPrefix = thisMetric.getMetricDetail().getPrefix();
@@ -40,12 +40,12 @@ public class CommandMetricUtils {
 				metricValue = 100 - thisMetricValue;
 				metricName = "CPU Utilization";
 				metricUnits = "%";
-			} else if(thisMetricPrefix.equals("Disk") && thisMetricName.equals("Used") 
+			} else if(thisMetricPrefix.equals("Disk") && thisMetricName.equals("Used")
 					&& !thisMetric.getMetricDetail().getUnits().equals("kb") && thisMetricValue > metricValue) {
 				metricValue = thisMetricValue;
 				metricName = "Fullest Disk";
 				metricUnits = "%";
-			} else if(thisMetricPrefix.startsWith("Memory") && !thisMetricPrefix.startsWith("MemoryDetailed") && !thisMetricName.startsWith("Swap") 
+			} else if(thisMetricPrefix.startsWith("Memory") && !thisMetricPrefix.startsWith("MemoryDetailed") && !thisMetricName.startsWith("Swap")
 					&& thisMetric.getMetricDetail().getUnits().equals("kb")) {
 				if (thisMetric.getMetricDetail().getName().endsWith("Free")) {
 					memFreeSet = true;
@@ -58,16 +58,16 @@ public class CommandMetricUtils {
 					memTotal = thisMetricValue;
 				}
 			}
-			
+
 			if(metricName != null && metricUnits != null) {
-				newMetrics.put(mungeString(metricPrefix, metricName), 
-					new MetricOutput(new MetricDetail(metricPrefix, metricName, metricUnits, metricTypes.NORMAL, 1), 
+				newMetrics.put(mungeString(metricPrefix, metricName),
+					new MetricOutput(new MetricDetail(metricPrefix, metricName, metricUnits, metricTypes.NORMAL, 1),
 					"", roundNumber(metricValue, 2)));
 				metricName = null;
 				metricUnits = null;
 			}
 		}
-		
+
 		if((memUsedSet && memFreeSet) || (memUsedSet && memTotalSet) || (memFreeSet && memTotalSet)) {
 			metricName = "Memory Utilization";
 			metricUnits = "%";
@@ -84,25 +84,25 @@ public class CommandMetricUtils {
 				logger.debug("Mem Free: " + memFree);
 				logger.debug("Mem Used: " + memUsed);
 			}
-			
+
 			logger.debug("Mem Utilization: " + metricValue);
-			
+
 			if(metricName != null && metricUnits != null) {
-				newMetrics.put(mungeString(metricPrefix, metricName), 
-					new MetricOutput(new MetricDetail(metricPrefix, metricName, metricUnits, metricTypes.NORMAL, 1), 
+				newMetrics.put(mungeString(metricPrefix, metricName),
+					new MetricOutput(new MetricDetail(metricPrefix, metricName, metricUnits, metricTypes.NORMAL, 1),
 					"", roundNumber(metricValue, 2)));
 			}
 		}
-		
+
 		if (!newMetrics.isEmpty()) {
 			currentMetrics.putAll(newMetrics);
 		}
 	}
-	
+
 	public static ArrayList<String> executeCommand(ArrayList<String[]> commands) {
 		return executeCommand(commands, false);
 	}
-	
+
 	public static ArrayList<String> executeCommand(ArrayList<String[]> commands, Boolean useFile) {
 		ArrayList<String> al = new ArrayList<String>();
 		for(int i=0; i< commands.size(); i++) {
@@ -110,16 +110,16 @@ public class CommandMetricUtils {
 		}
 		return al;
 	}
-	
+
 	public static ArrayList<String> executeCommand(String[] command) {
 		return executeCommand(command, false);
 	}
-	
+
 	public static ArrayList<String> executeCommand(String[] command, Boolean useFile) {
 		BufferedReader br = null;
 		ArrayList<String> al = new ArrayList<String>();
 		String line = null;
-		
+
 		if (useFile) {
 			File commandFile = new File(command + ".out");
 			CommandMetricUtils.logger.debug("Opening file: "
@@ -171,7 +171,7 @@ public class CommandMetricUtils {
 					if(proc != null) {
 						proc.getOutputStream().close();
 						proc.getErrorStream().close();
-						proc.getInputStream().close();						
+						proc.getInputStream().close();
 					}
 				} else {
 					CommandMetricUtils.logger.error("Error: command was null.");
@@ -210,7 +210,7 @@ public class CommandMetricUtils {
 		}
 		return "ms";
 	}
-	
+
 	private static void insertMetric(HashMap<String, MetricOutput> currentMetrics,
 		HashMap<String, MetricDetail> metricDeets, String metricName,
 		String metricPrefix, String metricValueString) {
@@ -239,7 +239,7 @@ public class CommandMetricUtils {
 			thisMetric.setCurrent(true);
 			currentMetrics.put(fullMetricName, thisMetric);
 		} else if (metricDeets.containsKey(metricNameLower)) {
-			currentMetrics.put(fullMetricName, 
+			currentMetrics.put(fullMetricName,
 				new MetricOutput(metricDeets.get(metricNameLower), metricPrefix, metricValue));
 		} else if (metricDeets.containsKey(metricName)) {
 			currentMetrics.put(fullMetricName,
@@ -260,13 +260,13 @@ public class CommandMetricUtils {
 			return str1 + UnixMetrics.kMetricTreeDivider + str2;
 		}
 	}
-	
+
 	public static void parseRegexMetricOutput(String thisCommand,
 		HashMap<Pattern, String[]> lineMappings, String metricPrefix,
 		int lineLimit, boolean checkAllRegex, HashMap<String, MetricOutput> currentMetrics,
 		HashMap<String, MetricDetail> metricDeets,
 		ArrayList<String> commandOutput) throws Exception {
-		
+
 		int lineCount = 0;
 		lineloop: for(String line : commandOutput) {
 			regexloop: for (Map.Entry<Pattern, String[]> lineMapping : lineMappings.entrySet()) {
@@ -278,7 +278,7 @@ public class CommandMetricUtils {
 					String thisMetricPrefix = metricPrefix;
 					String thisMetricName = "";
 					String thisMetricValueString = "";
-					
+
 					// Loop through columns of regexed line twice
 					// First loop - get metric prefixes
 					for (int l = 0; l < lineColumns.length; l++) {
@@ -287,6 +287,9 @@ public class CommandMetricUtils {
 							thisMetricPrefix = CommandMetricUtils.mungeString(thisMetricPrefix, thisPrefix.replaceAll("/", "-"));
 						} else if(lineColumns[l] == UnixMetrics.kColumnMetricDiskName) {
 							String thisPrefix = lineMatch.group(l + 1);
+ 							if (thisPrefix.equals("/")) {
+  							    thisPrefix = "/Root";
+							}
 							thisMetricPrefix = CommandMetricUtils.mungeString(
 								thisMetricPrefix, thisPrefix.substring(thisPrefix.lastIndexOf('/') + 1));
 						} else if(lineColumns[l] == UnixMetrics.kColumnMetricProcessName) {
@@ -306,7 +309,7 @@ public class CommandMetricUtils {
 							}
 						}
 					}
-					
+
 					// Second loop - get metrics
 					for (int m = 0; m < lineColumns.length; m++) {
 						if (lineColumns[m] == UnixMetrics.kColumnMetricPrefix ||
@@ -327,16 +330,16 @@ public class CommandMetricUtils {
 								thisMetricPrefix, lineMatch.group(m + 1));
 						}
 					}
-					
-					// If kColumnMetricName & kColumnMetricValue were used to get metric name & value, 
+
+					// If kColumnMetricName & kColumnMetricValue were used to get metric name & value,
 					// finally report this metric
 					if(!thisMetricName.isEmpty() && !thisMetricValueString.isEmpty()) {
 						CommandMetricUtils.insertMetric(currentMetrics,
 								metricDeets, CommandMetricUtils.mungeString(thisCommand, thisMetricName),
 								thisMetricPrefix, thisMetricValueString);
 					}
-						
-					// Once we find a valid mapping for this line, 
+
+					// Once we find a valid mapping for this line,
 					// stop looking for matches for this line,
 					// unless we explicitly want to check all regex mappings.
 					if(!checkAllRegex) {
@@ -359,7 +362,7 @@ public class CommandMetricUtils {
 
 	public static HashMap<String, Number> parseSimpleMetricOutput(
 		String thisCommand, ArrayList<String> commandOutput) throws Exception {
-		
+
 		HashMap<String, Number> output = new HashMap<String, Number>();
 		for(String line : commandOutput) {
 			line = line.trim();
@@ -378,7 +381,7 @@ public class CommandMetricUtils {
 		}
 		return output;
 	}
-	
+
 	// Resets current metrics to "false" and removes stale metrics
 	public static HashMap<String, MetricOutput> resetCurrentMetrics(
 			HashMap<String,MetricOutput> inputMetrics) {
@@ -397,7 +400,7 @@ public class CommandMetricUtils {
 		}
 		return outputMetrics;
 	}
-	
+
 	public static String[] replaceInArray(String[] thisArray, String findThis, String replaceWithThis) {
 		String[] outputArray = new String[thisArray.length];
 		for (int i=0; i < thisArray.length; i++) {
@@ -405,7 +408,7 @@ public class CommandMetricUtils {
 		}
 		return outputArray;
 	}
-	
+
 	public static ArrayList<String[]> replaceInArray(ArrayList<String[]> thisArrayList, String findThis, String replaceWithThis) {
 		ArrayList<String[]> outputArrayList = new ArrayList<String[]>();
 		for (int i=0; i < thisArrayList.size(); i++) {
@@ -413,7 +416,7 @@ public class CommandMetricUtils {
 		}
 		return outputArrayList;
 	}
-	
+
 	public static double roundNumber(double theNumber, int places) {
 		double placesDouble = Math.pow(10, places);
 		return Math.round(theNumber * placesDouble) / placesDouble;
